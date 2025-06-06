@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>設備查詢系統</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    label, input { font-size: 1rem; margin: 5px 0; }
+    #result { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1>設備查詢系統</h1>
+  <label for="serialInput">輸入變壓器序號：</label>
+  <input type="text" id="serialInput" />
+  <button onclick="search()">查詢</button>
+
+  <div id="result"></div>
+
+  <script>
+    async function search() {
+      const serial = document.getElementById('serialInput').value;
+      const response = await fetch(`/search?serial=${encodeURIComponent(serial)}`);
+      const data = await response.json();
+      const resultDiv = document.getElementById('result');
+      if (data.error) {
+        resultDiv.innerHTML = `<p style="color:red;">${data.error}</p>`;
+      } else {
+        resultDiv.innerHTML = `
+          <p><strong>變壓器序號：</strong> ${data.serial}</p>
+          <p><strong>變壓器生產日期：</strong> ${data.production_date}</p>
+          <p><strong>出貨數據機序號：</strong> ${data.shipment_part_serial}</p>
+        `;
+      }
+    }
+  </script>
+</body>
+</html>
