@@ -11,26 +11,51 @@
 </head>
 <body>
   <h1>設備查詢系統</h1>
-  <label for="serialInput">輸入變壓器序號：</label>
-  <input type="text" id="serialInput" />
-  <button onclick="search()">查詢</button>
+  <form onsubmit="event.preventDefault(); search();">
+    <label for="serialInput">輸入變壓器序號：</label>
+    <input
+      type="text"
+      id="serialInput"
+      name="serial"
+      maxlength="20"
+      pattern="^[a-zA-Z0-9\-]+$"
+      title="僅限輸入英文、數字與連字符（-）"
+      required
+    />
+    <button type="submit">查詢</button>
+  </form>
 
   <div id="result"></div>
 
   <script>
     async function search() {
-      const serial = document.getElementById('serialInput').value;
-      const response = await fetch(`/search?serial=${encodeURIComponent(serial)}`);
-      const data = await response.json();
-      const resultDiv = document.getElementById('result');
-      if (data.error) {
-        resultDiv.innerHTML = `<p style="color:red;">${data.error}</p>`;
-      } else {
-        resultDiv.innerHTML = `
-          <p><strong>變壓器序號：</strong> ${data.serial}</p>
-          <p><strong>變壓器生產日期：</strong> ${data.production_date}</p>
-          <p><strong>出貨數據機序號：</strong> ${data.shipment_part_serial}</p>
-        `;
+      const inputEl = document.getElementById('serialInput');
+      const serial = inputEl.value.trim();
+
+      // 前端再次檢查字元合法性
+      const regex = /^[a-zA-Z0-9\-]{1,20}$/;
+      if (!regex.test(serial)) {
+        document.getElementById('result').innerHTML =
+          `<p style="color:red;">❌ 輸入無效，僅限英文、數字與連字符（-），長度最多 20 字元。</p>`;
+        return;
+      }
+
+      try {
+        const response = await fetch(`/search?serial=${encodeURIComponent(serial)}`);
+        const data = await response.json();
+        const resultDiv = document.getElementById('result');
+        if (data.error) {
+          resultDiv.innerHTML = `<p style="color:red;">${data.error}</p>`;
+        } else {
+          resultDiv.innerHTML = `
+            <p><strong>變壓器序號：</strong> ${data.serial}</p>
+            <p><strong>變壓器生產日期：</strong> ${data.production_date}</p>
+            <p><strong>出貨數據機序號：</strong> ${data.shipment_part_serial}</p>
+          `;
+        }
+      } catch (err) {
+        document.getElementById('result').innerHTML =
+          `<p style="color:red;">🚫 查詢失敗，請稍後再試。</p>`;
       }
     }
   </script>
