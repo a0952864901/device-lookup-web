@@ -11,27 +11,45 @@
       max-width: 600px;
       margin: auto;
     }
-    input, button {
-      width: 100%;
-      padding: 10px;
-      font-size: 1rem;
-      box-sizing: border-box;
-    }
+
     label {
       display: block;
       margin-top: 10px;
     }
+
+    .input-group {
+      display: flex;
+      align-items: stretch; /* 讓按鈕與輸入欄等高 */
+      gap: 10px;
+      margin-top: 5px;
+    }
+
+    .input-group input {
+      width: 400px;              /* ✅ 輸入欄變窄 */
+      padding: 10px;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+
+    .input-group button {
+      padding: 0 16px;           /* ✅ 僅左右內距，讓高度靠 input 撐開 */
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
     #result {
       margin-top: 20px;
-      word-break: break-all;
+      word-break: break-word;
     }
   </style>
 </head>
 <body>
   <h1>設備查詢系統</h1>
   <label for="serialInput">輸入變壓器序號：</label>
-  <input type="text" id="serialInput" maxlength="20" pattern="[a-zA-Z0-9_-]+" required />
-  <button onclick="search()">查詢</button>
+  <div class="input-group">
+    <input type="text" id="serialInput" maxlength="20" pattern="[a-zA-Z0-9_-]+" required />
+    <button onclick="search()">查詢</button>
+  </div>
 
   <div id="result"></div>
 
