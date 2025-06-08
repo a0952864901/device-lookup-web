@@ -20,7 +20,7 @@ app.get('/search', (req, res) => {
   }
 
   if (serial.length > 20 || !/^[a-zA-Z0-9_-]+$/.test(serial)) {
-    return res.json({ error: '請符合所要求的格式' });
+    return res.json({ error: '序號格式不符' });
   }
 
   const query = `SELECT * FROM devices WHERE serial = ?`;
