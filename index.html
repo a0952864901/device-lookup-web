@@ -19,20 +19,20 @@
 
     .input-group {
       display: flex;
-      align-items: stretch; /* 讓按鈕與輸入欄等高 */
+      align-items: stretch;
       gap: 10px;
       margin-top: 5px;
     }
 
     .input-group input {
-      width: 400px;              /* ✅ 輸入欄變窄 */
+      width: 400px;
       padding: 10px;
       font-size: 1rem;
       box-sizing: border-box;
     }
 
     .input-group button {
-      padding: 0 16px;           /* ✅ 僅左右內距，讓高度靠 input 撐開 */
+      padding: 0 16px;
       font-size: 1rem;
       cursor: pointer;
     }
@@ -47,26 +47,44 @@
   <h1>設備查詢系統</h1>
   <label for="serialInput">輸入變壓器序號：</label>
   <div class="input-group">
-    <input type="text" id="serialInput" maxlength="20" pattern="[a-zA-Z0-9_-]+" required />
+    <input type="text" id="serialInput" maxlength="20" pattern="[a-zA-Z0-9_-]+" required autofocus />
     <button onclick="search()">查詢</button>
   </div>
 
   <div id="result"></div>
 
   <script>
+    // 支援按下 Enter 鍵執行查詢
+    document.getElementById('serialInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') search();
+    });
+
     async function search() {
       const serial = document.getElementById('serialInput').value;
-      const response = await fetch(`/search?serial=${encodeURIComponent(serial)}`);
-      const data = await response.json();
       const resultDiv = document.getElementById('result');
-      if (data.error) {
-        resultDiv.innerHTML = `<p style="color:red;">🚫 ${data.error}</p>`;
-      } else {
-        resultDiv.innerHTML = `
-          <p><strong>變壓器序號：</strong> ${data.serial}</p>
-          <p><strong>變壓器生產日期：</strong> ${data.production_date}</p>
-          <p><strong>出貨數據機序號：</strong> ${data.shipment_part_serial}</p>
-        `;
+      if (!serial) {
+        resultDiv.innerHTML = `<p style="color:red;">🚫 請輸入序號</p>`;
+        return;
+      }
+
+      resultDiv.innerHTML = '🔍 查詢中...';
+      try {
+        const response = await fetch(`/search?serial=${encodeURIComponent(serial)}`);
+        const data = await response.json();
+
+        if (data.error) {
+          resultDiv.innerHTML = `<p style="color:red;">🚫 ${data.error}</p>`;
+        } else {
+          resultDiv.innerHTML = `
+            <p><strong>變壓器序號：</strong> ${data.serial}</p>
+            <p><strong>變壓器生產日期：</strong> ${data.production_date}</p>
+            <p><strong>出貨數據機型號：</strong> ${data.modem_model}</p>
+            <p><strong>出貨數據機序號：</strong> ${data.shipment_part_serial}</p>
+            <p><strong>數據機出貨日期：</strong> ${data.modem_shipment_date}</p>
+          `;
+        }
+      } catch (err) {
+        resultDiv.innerHTML = `<p style="color:red;">🚫 查詢失敗，請稍後再試。</p>`;
       }
     }
   </script>
