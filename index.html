@@ -60,7 +60,7 @@
     });
 
     async function search() {
-      const serial = document.getElementById('serialInput').value;
+      const serial = document.getElementById('serialInput').value.replace(/\s+/g, '');
       const resultDiv = document.getElementById('result');
       if (!serial) {
         resultDiv.innerHTML = `<p style="color:red;">🚫 請輸入序號</p>`;
