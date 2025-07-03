@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>CM 事件統計 Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 10px 20px 0 20px;
+    }
+    h2 {
+      margin-bottom: 10px;
+      font-size: 1.4em;
+    }
+    .controls {
+      margin-bottom: 10px;
+      font-size: 0.9em;
+    }
+    select {
+      padding: 4px;
+      margin-right: 8px;
+      font-size: 0.9em;
+    }
+    canvas {
+      max-width: 100%;
+      height: 440px !important;
+    }
+  </style>
+</head>
+<body>
+  <h2>CM 事件統計 Dashboard</h2>
+  <div class="controls">
+    <label for="ip">選擇 CM IP：</label>
+    <select id="ip"></select>
+
+    <label for="start">起始時間：</label>
+    <select id="start"></select>
+    <label for="end">結束時間：</label>
+    <select id="end"></select>
+    <button onclick="window.chart.resetZoom()">重設 Zoom</button>
+  </div>
+  <canvas id="eventChart"></canvas>
+
+  <script>
+    async function fetchDbData() {
+      const response = await fetch("data/cm_events_cm1_2.db");
+      const arrayBuffer = await response.arrayBuffer();
+
+      const SQL = await initSqlJs({
+        locateFile: filename => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${filename}`
+      });
+      const db = new SQL.Database(new Uint8Array(arrayBuffer));
+
+      const res = db.exec(`SELECT * FROM events`);
+      if (!res[0]) return [];
+      const columns = res[0].columns.map(col => col.toLowerCase());
+      const values = res[0].values;
+      return values.map(row => Object.fromEntries(row.map((v, i) => [columns[i], v])));
+    }
+
+    function formatTimeToSlot(datetimeStr) {
+      if (!datetimeStr || typeof datetimeStr !== 'string') return null;
+      try {
+        const parsed = new Date(datetimeStr);
+        if (isNaN(parsed)) return null;
+        parsed.setMinutes(Math.floor(parsed.getMinutes() / 30) * 30, 0, 0);
+
+        const yyyy = parsed.getFullYear();
+        const MM = String(parsed.getMonth() + 1).padStart(2, '0');
+        const dd = String(parsed.getDate()).padStart(2, '0');
+        const hh = String(parsed.getHours()).padStart(2, '0');
+        const mm = String(parsed.getMinutes()).padStart(2, '0');
+
+        return `${yyyy}-${MM}-${dd} ${hh}:${mm}`;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function prepareData(events) {
+      const timeSlotSet = new Set();
+      const ipMap = new Map();
+      const structured = {};
+
+      events.forEach(e => {
+        const timestamp = e.timestamp;
+        if (!timestamp) return;
+
+        const slot = formatTimeToSlot(timestamp);
+        if (!slot) return;
+
+        const ip = e.ip;
+        const msg = e.msg || "";
+
+        const type =
+          /Failed to lock on frequency 7\d{8}Hz/.test(msg) ? "Failed to lock on frequency (7xxMHz)" :
+          msg.includes("QFM loss") ? "QFM loss" :
+          msg.includes("MDD Lost") ? "MDD Lost" :
+          msg.includes("QamFecLockFail") ? "QamFecLockFail" :
+          msg.includes("QamFecLockRecover") ? "QamFecLockRecover" :
+          "Other";
+
+        timeSlotSet.add(slot);
+        ipMap.set(ip, true);
+
+        if (!structured[ip]) structured[ip] = {};
+        if (!structured[ip][type]) structured[ip][type] = {};
+
+        structured[ip][type][slot] = (structured[ip][type][slot] || 0) + 1;
+      });
+
+      const sortedSlots = Array.from(timeSlotSet).sort();
+
+      function ipToNumeric(ip) {
+        return ip.split('.').reduce((acc, octet) => acc * 256 + parseInt(octet), 0);
+      }
+
+      const ipList = Array.from(ipMap.keys()).sort((a, b) => ipToNumeric(a) - ipToNumeric(b));
+
+      const final = {};
+      ipList.forEach(ip => {
+        final[ip] = {};
+        ["Failed to lock on frequency (7xxMHz)", "QFM loss", "MDD Lost", "QamFecLockFail", "QamFecLockRecover"].forEach(type => {
+          final[ip][type] = sortedSlots.map(slot => {
+            return structured[ip]?.[type]?.[slot] || 0;
+          });
+        });
+      });
+
+      return { ipData: final, labels: sortedSlots, ipList: ipList };
+    }
+
+    function renderChart(ip, labels, ipData, startIndex, endIndex) {
+      const ctx = document.getElementById('eventChart').getContext('2d');
+      const data = ipData[ip];
+      const colors = {
+        "Failed to lock on frequency (7xxMHz)": "#9966ff",
+        "QFM loss": "#ff6384",
+        "QamFecLockFail": "#ffce56",
+        "MDD Lost": "#ff5733",
+        "QamFecLockRecover": "#4bc0c0",
+        "Other": "#cccccc"
+      };
+      const datasets = Object.keys(data).map(type => ({
+        label: type,
+        data: data[type].slice(startIndex, endIndex + 1),
+        backgroundColor: colors[type],
+        barThickness: 20
+      }));
+
+      const xLabels = labels.slice(startIndex, endIndex + 1);
+
+      if (window.chart) window.chart.destroy();
+      window.chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: xLabels,
+          datasets: datasets
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'top' },
+            title: { display: true, text: `事件統計圖 (${ip})` },
+            zoom: {
+              pan: {
+                enabled: true,
+                mode: 'x'
+              },
+              zoom: {
+                wheel: {
+                  enabled: true
+                },
+                pinch: {
+                  enabled: true
+                },
+                mode: 'x'
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: {
+                maxRotation: 90,
+                minRotation: 45,
+                color: (ctx) => {
+                  const index = ctx.index;
+                  const ipDataByType = ipData[ip];
+                  let total = 0;
+                  for (const type in ipDataByType) {
+                    const val = ipDataByType[type][startIndex + index];
+                    total += (val !== undefined ? val : 0);
+                  }
+                  return total === 0 ? '#999' : '#000';
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    async function initDashboard() {
+      const events = await fetchDbData();
+      const { ipData, labels, ipList } = prepareData(events);
+
+      const ipSelect = document.getElementById('ip');
+      ipSelect.innerHTML = '';
+      ipList.forEach(ip => {
+        const option = document.createElement("option");
+        option.value = ip;
+        option.textContent = ip;
+        ipSelect.appendChild(option);
+      });
+
+      const start = document.getElementById('start');
+      const end = document.getElementById('end');
+      start.innerHTML = '';
+      end.innerHTML = '';
+      labels.forEach((label, idx) => {
+        const optStart = document.createElement("option");
+        optStart.value = idx;
+        optStart.textContent = label;
+        start.appendChild(optStart);
+
+        const optEnd = document.createElement("option");
+        optEnd.value = idx;
+        optEnd.textContent = label;
+        end.appendChild(optEnd);
+      });
+      end.selectedIndex = labels.length - 1;
+
+      function refresh() {
+        const ip = ipSelect.value;
+        const startIdx = parseInt(start.value);
+        const endIdx = parseInt(end.value);
+        if (startIdx <= endIdx) renderChart(ip, labels, ipData, startIdx, endIdx);
+      }
+
+      ipSelect.onchange = refresh;
+      start.onchange = refresh;
+      end.onchange = refresh;
+      refresh();
+    }
+
+    initDashboard();
+  </script>
+</body>
+</html>

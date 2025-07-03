@@ -6,6 +6,7 @@ const PORT = process.env.PORT || 3000; // 支援 Render 需要的動態 PORT
 
 // 靜態檔案支援
 app.use(express.static(path.join(__dirname)));
+app.use('/data', express.static(path.join(__dirname, 'public/data')));
 
 // 建立資料庫連線
 const db = new sqlite3.Database('./devices.db');
