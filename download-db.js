@@ -1,5 +1,4 @@
 // download-db.js
-const fetch = require('node-fetch'); // ⬅️ 加這行
 const fs = require('fs');
 const unzipper = require('unzipper');
 const path = require('path');
@@ -11,8 +10,9 @@ const extractDir = path.join(__dirname, 'public/data');
 (async () => {
   try {
     console.log('⬇️  開始下載資料庫 ZIP...');
-    const res = await fetch(url);
+    const res = await fetch(url); // ⬅️ 使用 Node.js 22 內建 fetch
     if (!res.ok) throw new Error(`下載失敗：${res.statusText}`);
+
     const fileStream = fs.createWriteStream(zipPath);
     await new Promise((resolve, reject) => {
       res.body.pipe(fileStream);
