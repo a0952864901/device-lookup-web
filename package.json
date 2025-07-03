@@ -4,7 +4,8 @@
   "description": "A simple web app to query device info by serial number",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "download-db": "node download-db.js"
   },
   "keywords": [],
   "author": "",
@@ -12,6 +13,9 @@
   "dependencies": {
     "csv-parser": "^3.2.0",
     "express": "^5.1.0",
-    "sqlite3": "^5.1.7"
+    "fs": "^0.0.1-security",
+    "node-fetch": "^3.3.2",
+    "sqlite3": "^5.1.7",
+    "unzipper": "^0.12.3"
   }
 }
