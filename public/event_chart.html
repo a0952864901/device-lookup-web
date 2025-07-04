@@ -84,6 +84,18 @@
       const timeSlotSet = new Set();
       const ipMap = new Map();
       const structured = {};
+      const ipModelMap = {
+        "10.43.80.62": "CGNM-3550",
+        "10.43.81.88": "CGN4-TWN",
+        "10.96.128.215": "CGN4-TWN",
+        "10.93.64.202": "CGNM-3550",
+        "10.43.80.108": "CGNM-3550",
+        "10.64.197.115": "CGNM-3550",
+        "10.195.0.80": "CGNM-3550",
+        "10.64.0.33": "CGNM-3550",
+        "10.64.196.117": "CGNM-3550",
+        "10.40.197.73": "CGNM-3550"
+      };
 
       events.forEach(e => {
         const timestamp = e.timestamp;
@@ -130,7 +142,7 @@
         });
       });
 
-      return { ipData: final, labels: sortedSlots, ipList: ipList };
+      return { ipData: final, labels: sortedSlots, ipList: ipList, ipModelMap };
     }
 
     function renderChart(ip, labels, ipData, startIndex, endIndex) {
@@ -167,17 +179,10 @@
             legend: { position: 'top' },
             title: { display: true, text: `事件統計圖 (${ip})` },
             zoom: {
-              pan: {
-                enabled: true,
-                mode: 'x'
-              },
+              pan: { enabled: true, mode: 'x' },
               zoom: {
-                wheel: {
-                  enabled: true
-                },
-                pinch: {
-                  enabled: true
-                },
+                wheel: { enabled: true },
+                pinch: { enabled: true },
                 mode: 'x'
               }
             }
@@ -206,14 +211,14 @@
 
     async function initDashboard() {
       const events = await fetchDbData();
-      const { ipData, labels, ipList } = prepareData(events);
+      const { ipData, labels, ipList, ipModelMap } = prepareData(events);
 
       const ipSelect = document.getElementById('ip');
       ipSelect.innerHTML = '';
       ipList.forEach(ip => {
         const option = document.createElement("option");
         option.value = ip;
-        option.textContent = ip;
+        option.textContent = ipModelMap[ip] ? `${ip} (${ipModelMap[ip]})` : ip;
         ipSelect.appendChild(option);
       });
 
