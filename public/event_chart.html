@@ -132,15 +132,16 @@
 
       const ipList = Array.from(ipMap.keys()).sort((a, b) => ipToNumeric(a) - ipToNumeric(b));
 
-      const final = {};
       ipList.forEach(ip => {
-        final[ip] = {};
-        ["Failed to lock on frequency (7xxMHz)", "QFM loss", "MDD Lost", "QamFecLockFail", "QamFecLockRecover"].forEach(type => {
-          final[ip][type] = sortedSlots.map(slot => {
-            return structured[ip]?.[type]?.[slot] || 0;
-          });
+      final[ip] = {};
+      const types = Object.keys(structured[ip]); // 自動取得此 IP 所有出現過的 msg 類型（含 Other）
+      types.forEach(type => {
+        final[ip][type] = sortedSlots.map(slot => {
+          return structured[ip][type]?.[slot] || 0;
         });
       });
+    });
+
 
       return { ipData: final, labels: sortedSlots, ipList: ipList, ipModelMap };
     }
