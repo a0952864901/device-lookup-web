@@ -132,6 +132,7 @@
 
       const ipList = Array.from(ipMap.keys()).sort((a, b) => ipToNumeric(a) - ipToNumeric(b));
 
+      const final = {}; // ✅ 這行一定要加
       ipList.forEach(ip => {
       final[ip] = {};
       const types = Object.keys(structured[ip]); // 自動取得此 IP 所有出現過的 msg 類型（含 Other）
