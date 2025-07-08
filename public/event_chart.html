@@ -84,7 +84,7 @@
       const timeSlotSet = new Set();
       const ipMap = new Map();
       const structured = {};
-      const ipModelMap = {
+      window.ipModelMap = {
         "10.43.80.62": "CGNM-3550",
         "10.43.81.88": "CGN4-TWN",
         "10.96.128.215": "CGN4-TWN",
@@ -132,7 +132,7 @@
 
       const ipList = Array.from(ipMap.keys()).sort((a, b) => ipToNumeric(a) - ipToNumeric(b));
 
-      const final = {}; // ✅ 這行一定要加
+      const final = {};
       ipList.forEach(ip => {
       final[ip] = {};
       const types = Object.keys(structured[ip]); // 自動取得此 IP 所有出現過的 msg 類型（含 Other）
@@ -150,6 +150,7 @@
     function renderChart(ip, labels, ipData, startIndex, endIndex) {
       const ctx = document.getElementById('eventChart').getContext('2d');
       const data = ipData[ip];
+      const model = window.ipModelMap?.[ip] || "unknown";
       const colors = {
         "Failed to lock on frequency (7xxMHz)": "#9966ff",
         "QFM loss": "#ff6384",
@@ -179,7 +180,7 @@
           maintainAspectRatio: false,
           plugins: {
             legend: { position: 'top' },
-            title: { display: true, text: `事件統計圖 (${ip})` },
+            title: { display: true, text: `事件統計圖 (${ip} [${model}])` },
             zoom: {
               pan: { enabled: true, mode: 'x' },
               zoom: {
@@ -223,11 +224,12 @@
       ipList.forEach(ip => {
         const option = document.createElement("option");
         option.value = ip;
-        const model = ipModelMap[ip] || "unknown";
-        option.textContent = `${ip} (${model})`;
-        if (model === "unknown") {
-          option.style.color = 'red'; // 可視化未登錄設備
-        }
+        option.textContent = ip; // ❗️只顯示 IP，不加 model 名稱
+        // const model = ipModelMap[ip] || "unknown";
+        // option.textContent = `${ip} (${model})`;
+        // if (model === "unknown") {
+        //   option.style.color = 'red'; // 可視化未登錄設備
+        // }
         ipSelect.appendChild(option);
         console.log(`📌 加入選單選項：${option.textContent}`);
       });
@@ -266,4 +268,3 @@
   </script>
 </body>
 </html>
-<!-- reverse db 10.64.197.115 (CGNM3550) to 10.14.194.115 (CBN3368) & Update IP with Model -->
