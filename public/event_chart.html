@@ -170,12 +170,22 @@
         "QamFecLockRecover": "#4bc0c0",
         "Other": "#cccccc"
       };
-      const datasets = Object.keys(data).map(type => ({
-        label: type,
-        data: data[type].slice(startIndex, endIndex + 1),
-        backgroundColor: colors[type],
-        barThickness: 20
-      }));
+      const typeOrder = [
+        "Failed to lock on frequency (7xxMHz)",
+        "QFM loss",
+        "MDD Lost",
+        "QamFecLockFail",
+        "QamFecLockRecover",        
+        "Other"
+      ];
+      const datasets = typeOrder
+        .filter(type => data[type])  // 只加入有資料的類型
+        .map(type => ({
+          label: type,
+          data: data[type].slice(startIndex, endIndex + 1),
+          backgroundColor: colors[type],
+          barThickness: 20
+        }));
 
       const xLabels = labels.slice(startIndex, endIndex + 1);
 
