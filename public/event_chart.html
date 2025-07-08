@@ -201,7 +201,13 @@
           maintainAspectRatio: false,
           plugins: {
             legend: { position: 'top' },
-            title: { display: true, text: `事件統計圖 (${ip} [${model}])` },
+            title: { 
+              display: true, 
+              text: `事件統計圖 (${ip} [${model}])`,
+              font: {
+                size: 20 // 圖表標題字體size
+              } 
+            },
             zoom: {
               pan: { enabled: true, mode: 'x' },
               zoom: {
@@ -280,5 +286,10 @@
 
     initDashboard();
   </script>
+
+  <footer style="margin-top: 20px; font-size: 0.9em; text-align: center; color: #AAB7B8;">
+  Powered by CY <img src="favicon.png" alt="logo" style="width: 16px; height: 16px; vertical-align: middle; margin-left: 4px;">
+  </footer>
+
 </body>
 </html>
