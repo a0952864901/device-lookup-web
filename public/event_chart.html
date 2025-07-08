@@ -214,6 +214,9 @@
     async function initDashboard() {
       const events = await fetchDbData();
       const { ipData, labels, ipList, ipModelMap } = prepareData(events);
+      console.log(`✅ 共載入 ${events.length} 筆事件資料`);
+      const uniqueIPs = [...new Set(events.map(e => e.ip))];
+      console.log(`✅ 解析出 ${uniqueIPs.length} 個不同的 IP：`, uniqueIPs);
 
       const ipSelect = document.getElementById('ip');
       ipSelect.innerHTML = '';
