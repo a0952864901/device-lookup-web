@@ -63,8 +63,9 @@
 
     function formatTimeToSlot(datetimeStr) {
       if (!datetimeStr || typeof datetimeStr !== 'string') return null;
+      const cleaned = datetimeStr.trim().replace(/\s+/g, ' ');
       try {
-        const parsed = new Date(datetimeStr);
+        const parsed = new Date(cleaned);
         if (isNaN(parsed)) return null;
         parsed.setMinutes(Math.floor(parsed.getMinutes() / 30) * 30, 0, 0);
 
@@ -85,7 +86,6 @@
       const ipMap = new Map();
       const structured = {};
 
-      // 可選擴充的 IP-model 對應表
       window.ipModelMap = {
         "10.43.80.62": "CGNM-3550",
         "10.43.81.88": "CGN4-TWN",
@@ -100,13 +100,10 @@
       };
 
       events.forEach(e => {
-        let rawTimestamp = e.timestamp?.trim() || '';
-        rawTimestamp = rawTimestamp.replace('@', '');  // 去掉 @ 符號
+        let rawTimestamp = e.timestamp?.trim().replace(/@/, '') || '';
+        rawTimestamp = rawTimestamp.replace(/\s+/g, ' ');
         const parsedDate = new Date(rawTimestamp);
-        if (isNaN(parsedDate)) {
-          console.warn("⚠️ 無效 timestamp，已略過：", e.timestamp, "→ 來源 IP:", e.ip); // 強化容錯
-          return;
-        }
+        if (isNaN(parsedDate)) return;
 
         parsedDate.setMinutes(Math.floor(parsedDate.getMinutes() / 30) * 30, 0, 0);
         const yyyy = parsedDate.getFullYear();
@@ -116,11 +113,8 @@
         const mm = String(parsedDate.getMinutes()).padStart(2, '0');
         const slot = `${yyyy}-${MM}-${dd} ${hh}:${mm}`;
 
-        let ip = (e.ip || '').trim().split(':')[0]; // 去掉 port
-        if (!ip) {
-          console.warn("⚠️ 無效 IP，已略過：", e.ip); //強化容錯
-          return;
-        }
+        let ip = (e.ip || '').trim().split(':')[0];
+        if (!ip) return;
 
         const msg = e.msg || "";
         const type =
@@ -163,8 +157,6 @@
 
       return { ipData: final, labels: sortedSlots, ipList: ipList, ipModelMap };
     }
-
-
 
     function renderChart(ip, labels, ipData, startIndex, endIndex) {
       const ctx = document.getElementById('eventChart').getContext('2d');
@@ -234,30 +226,16 @@
     async function initDashboard() {
       const events = await fetchDbData();
       const { ipData, labels, ipList, ipModelMap } = prepareData(events);
-      console.log(`✅ 共載入 ${events.length} 筆事件資料`);
-      const uniqueIPs = [...new Set(events.map(e => e.ip))];
-      console.log(`✅ 解析出 ${uniqueIPs.length} 個不同的 IP：`, uniqueIPs);
-      console.log("📋 ipList = ", ipList);
 
       const ipSelect = document.getElementById('ip');
       ipSelect.innerHTML = '';
       ipList.forEach(ip => {
-        try {
-          const option = document.createElement("option");
-          option.value = ip;
-
-          const model = window.ipModelMap?.[ip] || "unknown";
-          option.textContent = `${ip} (${model})`;
-
-          if (model === "unknown") {
-            option.style.color = 'red'; // 可視化未登錄設備
-          }
-
-          ipSelect.appendChild(option);
-          console.log(`📌 加入選單選項：${option.textContent}`);
-        } catch (err) {
-          console.error(`❌ 加入 IP 選項時失敗：${ip}`, err);
-        }
+        const option = document.createElement("option");
+        const model = window.ipModelMap?.[ip] || "unknown";
+        option.value = ip;
+        option.textContent = `${ip} (${model})`;
+        if (model === "unknown") option.style.color = 'red';
+        ipSelect.appendChild(option);
       });
 
       const start = document.getElementById('start');
