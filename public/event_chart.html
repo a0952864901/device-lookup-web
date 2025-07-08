@@ -84,6 +84,8 @@
       const timeSlotSet = new Set();
       const ipMap = new Map();
       const structured = {};
+
+      // 可選擴充的 IP-model 對應表
       window.ipModelMap = {
         "10.43.80.62": "CGNM-3550",
         "10.43.81.88": "CGN4-TWN",
@@ -98,15 +100,29 @@
       };
 
       events.forEach(e => {
-        const timestamp = e.timestamp;
-        if (!timestamp) return;
+        let rawTimestamp = e.timestamp?.trim() || '';
+        rawTimestamp = rawTimestamp.replace('@', '');  // 去掉 @ 符號
+        const parsedDate = new Date(rawTimestamp);
+        if (isNaN(parsedDate)) {
+          console.warn("⚠️ 無效 timestamp，已略過：", e.timestamp, "→ 來源 IP:", e.ip); // 強化容錯
+          return;
+        }
 
-        const slot = formatTimeToSlot(timestamp);
-        if (!slot) return;
+        parsedDate.setMinutes(Math.floor(parsedDate.getMinutes() / 30) * 30, 0, 0);
+        const yyyy = parsedDate.getFullYear();
+        const MM = String(parsedDate.getMonth() + 1).padStart(2, '0');
+        const dd = String(parsedDate.getDate()).padStart(2, '0');
+        const hh = String(parsedDate.getHours()).padStart(2, '0');
+        const mm = String(parsedDate.getMinutes()).padStart(2, '0');
+        const slot = `${yyyy}-${MM}-${dd} ${hh}:${mm}`;
 
-        const ip = e.ip;
+        let ip = (e.ip || '').trim().split(':')[0]; // 去掉 port
+        if (!ip) {
+          console.warn("⚠️ 無效 IP，已略過：", e.ip); //強化容錯
+          return;
+        }
+
         const msg = e.msg || "";
-
         const type =
           /Failed to lock on frequency 7\d{8}Hz/.test(msg) ? "Failed to lock on frequency (7xxMHz)" :
           msg.includes("QFM loss") ? "QFM loss" :
@@ -137,30 +153,17 @@
       const final = {};
       ipList.forEach(ip => {
         final[ip] = {};
-        const types = structured[ip] ? Object.keys(structured[ip]) : [];
-        if (types.length === 0) {
-          console.warn(`⚠️ IP ${ip} 沒有任何有效的事件類型，將顯示為空`);
-          // 仍保留空的 dataset，以便選單顯示
-          final[ip]["無資料"] = Array(sortedSlots.length).fill(0);
-        } else {
-          types.forEach(type => {
-            final[ip][type] = sortedSlots.map(slot => {
-              return structured[ip][type]?.[slot] || 0;
-            });
+        const types = Object.keys(structured[ip]);
+        types.forEach(type => {
+          final[ip][type] = sortedSlots.map(slot => {
+            return structured[ip][type]?.[slot] || 0;
           });
-        }
-      });
-
-
-      // Debug 額外資訊
-      console.log("🔍 structured IP keys：", Object.keys(structured));
-      ipList.forEach(ip => {
-        const types = structured[ip] ? Object.keys(structured[ip]) : [];
-        console.log(`📌 IP ${ip} 有 ${types.length} 種事件類型：`, types);
+        });
       });
 
       return { ipData: final, labels: sortedSlots, ipList: ipList, ipModelMap };
     }
+
 
 
     function renderChart(ip, labels, ipData, startIndex, endIndex) {
