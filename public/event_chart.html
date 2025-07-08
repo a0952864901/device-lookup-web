@@ -139,14 +139,18 @@
         final[ip] = {};
         const types = structured[ip] ? Object.keys(structured[ip]) : [];
         if (types.length === 0) {
-          console.warn(`⚠️ IP ${ip} 沒有任何有效的事件類型，將略過`);
-        }
-        types.forEach(type => {
-          final[ip][type] = sortedSlots.map(slot => {
-            return structured[ip][type]?.[slot] || 0;
+          console.warn(`⚠️ IP ${ip} 沒有任何有效的事件類型，將顯示為空`);
+          // 仍保留空的 dataset，以便選單顯示
+          final[ip]["無資料"] = Array(sortedSlots.length).fill(0);
+        } else {
+          types.forEach(type => {
+            final[ip][type] = sortedSlots.map(slot => {
+              return structured[ip][type]?.[slot] || 0;
+            });
           });
-        });
+        }
       });
+
 
       // Debug 額外資訊
       console.log("🔍 structured IP keys：", Object.keys(structured));
