@@ -245,7 +245,14 @@
         try {
           const option = document.createElement("option");
           option.value = ip;
-          option.textContent = ip;
+
+          const model = window.ipModelMap?.[ip] || "unknown";
+          option.textContent = `${ip} (${model})`;
+
+          if (model === "unknown") {
+            option.style.color = 'red'; // 可視化未登錄設備
+          }
+
           ipSelect.appendChild(option);
           console.log(`📌 加入選單選項：${option.textContent}`);
         } catch (err) {
