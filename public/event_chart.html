@@ -130,7 +130,9 @@
         return ip.split('.').reduce((acc, octet) => acc * 256 + parseInt(octet), 0);
       }
 
-      const ipList = Array.from(ipMap.keys()).sort((a, b) => ipToNumeric(a) - ipToNumeric(b));
+      const ipList = Array.from(ipMap.keys())
+        .filter(ip => ip && typeof ip === 'string')  // ✅ 過濾空白或非字串
+        .sort((a, b) => ipToNumeric(a) - ipToNumeric(b));
 
       const final = {};
       ipList.forEach(ip => {
@@ -218,20 +220,20 @@
       console.log(`✅ 共載入 ${events.length} 筆事件資料`);
       const uniqueIPs = [...new Set(events.map(e => e.ip))];
       console.log(`✅ 解析出 ${uniqueIPs.length} 個不同的 IP：`, uniqueIPs);
+      console.log("📋 ipList = ", ipList);
 
       const ipSelect = document.getElementById('ip');
       ipSelect.innerHTML = '';
       ipList.forEach(ip => {
-        const option = document.createElement("option");
-        option.value = ip;
-        option.textContent = ip; // ❗️只顯示 IP，不加 model 名稱
-        // const model = ipModelMap[ip] || "unknown";
-        // option.textContent = `${ip} (${model})`;
-        // if (model === "unknown") {
-        //   option.style.color = 'red'; // 可視化未登錄設備
-        // }
-        ipSelect.appendChild(option);
-        console.log(`📌 加入選單選項：${option.textContent}`);
+        try {
+          const option = document.createElement("option");
+          option.value = ip;
+          option.textContent = ip;
+          ipSelect.appendChild(option);
+          console.log(`📌 加入選單選項：${option.textContent}`);
+        } catch (err) {
+          console.error(`❌ 加入 IP 選項時失敗：${ip}`, err);
+        }
       });
 
       const start = document.getElementById('start');
