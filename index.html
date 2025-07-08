@@ -5,11 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>設備查詢系統</title>
   <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+
     body {
+      display: flex;
+      flex-direction: column;
       font-family: sans-serif;
+    }
+
+    .container {
+      flex: 1;
       padding: 20px;
       max-width: 600px;
       margin: auto;
+      box-sizing: border-box;
     }
 
     label {
@@ -41,17 +53,39 @@
       margin-top: 20px;
       word-break: break-word;
     }
+
+    footer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ABB2B9;
+      font-size: 0.6em;
+      gap: 6px;
+      padding: 12px 0;
+    }
+
+    footer img {
+      width: 18px;
+      height: 18px;
+    }
   </style>
 </head>
 <body>
-  <h1>設備查詢系統</h1>
-  <label for="serialInput">輸入變壓器序號：</label>
-  <div class="input-group">
-    <input type="text" id="serialInput" maxlength="20" pattern="[a-zA-Z0-9_-]+" required autofocus />
-    <button onclick="search()">查詢</button>
+  <div class="container">
+    <h1>設備查詢系統</h1>
+    <label for="serialInput">輸入變壓器序號：</label>
+    <div class="input-group">
+      <input type="text" id="serialInput" maxlength="20" pattern="[a-zA-Z0-9_-]+" required autofocus />
+      <button onclick="search()">查詢</button>
+    </div>
+
+    <div id="result"></div>
   </div>
 
-  <div id="result"></div>
+  <footer>
+    <span>Powered by</span>
+    <img src="favicon.ico" alt="icon" />
+  </footer>
 
   <script>
     // 支援按下 Enter 鍵執行查詢
@@ -88,20 +122,5 @@
       }
     }
   </script>
-
-  <footer style="
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #ABB2B9;
-    font-size: 0.6em;
-    margin-top: 30px;
-    gap: 6px;
-    line-height: 1.6;
-  ">
-    <span>Powered by cy</span>
-    <img src="favicon.ico" alt="icon" style="width: 18px; height: 18px;">
-  </footer>
-
 </body>
 </html>
