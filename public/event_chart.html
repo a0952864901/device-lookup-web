@@ -131,23 +131,33 @@
       }
 
       const ipList = Array.from(ipMap.keys())
-        .filter(ip => ip && typeof ip === 'string')  // ✅ 過濾空白或非字串
+        .filter(ip => ip && typeof ip === 'string')
         .sort((a, b) => ipToNumeric(a) - ipToNumeric(b));
 
       const final = {};
       ipList.forEach(ip => {
-      final[ip] = {};
-      const types = Object.keys(structured[ip]); // 自動取得此 IP 所有出現過的 msg 類型（含 Other）
-      types.forEach(type => {
-        final[ip][type] = sortedSlots.map(slot => {
-          return structured[ip][type]?.[slot] || 0;
+        final[ip] = {};
+        const types = structured[ip] ? Object.keys(structured[ip]) : [];
+        if (types.length === 0) {
+          console.warn(`⚠️ IP ${ip} 沒有任何有效的事件類型，將略過`);
+        }
+        types.forEach(type => {
+          final[ip][type] = sortedSlots.map(slot => {
+            return structured[ip][type]?.[slot] || 0;
+          });
         });
       });
-    });
 
+      // Debug 額外資訊
+      console.log("🔍 structured IP keys：", Object.keys(structured));
+      ipList.forEach(ip => {
+        const types = structured[ip] ? Object.keys(structured[ip]) : [];
+        console.log(`📌 IP ${ip} 有 ${types.length} 種事件類型：`, types);
+      });
 
       return { ipData: final, labels: sortedSlots, ipList: ipList, ipModelMap };
     }
+
 
     function renderChart(ip, labels, ipData, startIndex, endIndex) {
       const ctx = document.getElementById('eventChart').getContext('2d');
